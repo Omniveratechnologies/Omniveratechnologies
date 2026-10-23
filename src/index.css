@@ -1376,3 +1376,34 @@
     display: none !important;
   }
 }
+
+
+/* =========================================================
+   MOBILE APP NAVIGATION — FIXED VIEWPORT BAR
+   Keep this outside the scrolling page content (see Layout.jsx).
+========================================================= */
+@media (max-width: 600px) {
+  .mobile-bottom-nav {
+    position: fixed !important;
+    inset-inline: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    z-index: 9999 !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    height: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+    min-height: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+    margin: 0 !important;
+    padding: 6px 7px calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+    border-top: 1px solid rgba(160, 183, 225, 0.16) !important;
+    background: rgba(4, 7, 14, 0.98) !important;
+    isolation: isolate;
+  }
+
+  .mobile-page-shell {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}

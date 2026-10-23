@@ -54,9 +54,11 @@ export default function Layout() {
           <Footer />
         </main>
 
-        {/* Mobile bottom navigation */}
-        <MobileBottomNav />
       </div>
+
+      {/* Keep the bottom navigation outside the scrolling app content so it
+          remains fixed to the viewport while only the page content scrolls. */}
+      <MobileBottomNav />
     </div>
   );
 }
