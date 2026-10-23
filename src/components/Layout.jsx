@@ -34,7 +34,7 @@ export default function Layout() {
       />
 
       {/* Main application area */}
-      <div className="lg:pl-[284px]">
+      <div className="app-main-area">
 
         {/* Mobile fixed header */}
         <header

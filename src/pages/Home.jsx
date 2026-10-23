@@ -103,49 +103,36 @@ export default function Home() {
 
             <div className="max-w-[720px]">
 
-              {/* Eyebrow */}
+             {/* =================================================
+    DESKTOP / TABLET POSITIONING COPY
+================================================= */}
 
-              <div className="mb-7 inline-flex items-center gap-3 rounded-full border border-cyan-400/10 bg-cyan-400/[0.04] px-4 py-2">
+<div className="home-positioning-copy">
 
-                <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_15px_#22d3ee]" />
+<h1 className="font-sans text-[30px] font-semibold leading-[1.12] tracking-[-0.025em] sm:text-[38px] lg:text-[46px] xl:text-[52px]">
 
-                <span className="text-xs font-medium tracking-wide text-gray-400">
-                  Product engineering studio
-                </span>
+  <span className="block">
+    In-House Products.
+  </span>
 
-              </div>
+  <span className="block">
+    Custom Client
+  </span>
 
+  <span className="block bg-gradient-to-r from-white via-gray-200 to-gray-500 bg-clip-text text-transparent">
+    Solutions.
+  </span>
 
-              {/* =================================================
-                  DESKTOP / TABLET POSITIONING COPY
-              ================================================= */}
+</h1>
 
-              <div className="home-positioning-copy">
+<p className="mt-5 max-w-[560px] font-sans text-[14px] leading-6 text-gray-400 sm:text-[15px]">
+  Omnivera is a technology company building its own software
+  products while creating bespoke digital solutions for
+  ambitious businesses. From product engineering to automation,
+  we turn ideas into scalable technology.
+</p>
 
-                <h1 className="font-display text-[42px] font-semibold leading-[1] tracking-[-0.035em] sm:text-[52px] lg:text-[60px] xl:text-[66px]">
-
-                  <span className="block">
-                    In-House Products.
-                  </span>
-
-                  <span className="block">
-                    Custom Client
-                  </span>
-
-                  <span className="block bg-gradient-to-r from-white via-gray-200 to-gray-500 bg-clip-text text-transparent">
-                    Solutions.
-                  </span>
-
-                </h1>
-
-                <p className="mt-8 max-w-[620px] text-[16px] leading-7 text-gray-400 sm:text-[17px]">
-                  Omnivera is a technology company building its own software
-                  products while creating bespoke digital solutions for
-                  ambitious businesses. From product engineering to automation,
-                  we turn ideas into scalable technology.
-                </p>
-
-              </div>
+</div>
 
 
               {/* =================================================
@@ -156,39 +143,41 @@ export default function Home() {
               ================================================= */}
 
               <div className="mobile-development-gear">
+                <div className="mobile-company-name">
+                  Omnivera Technologies Pvt Limited
+                </div>
                 <DevelopmentGear />
               </div>
 
 
-              {/* =================================================
-                  CTA
-              ================================================= */}
+             {/* =================================================
+    CTA
+================================================= */}
 
-              <div className="mt-9 flex flex-wrap gap-3">
+<div className="mt-7 flex flex-wrap gap-3">
 
-                <Link
-                  to="/contact-us"
-                  className="group inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-600 px-7 py-4 font-medium text-white shadow-[0_10px_50px_rgba(14,165,233,0.2)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_10px_70px_rgba(14,165,233,0.35)]"
-                >
-                  Innovate with Omnivera
+<Link
+  to="/contact-us"
+  className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-600 px-5 py-3 text-sm font-medium text-white shadow-[0_8px_35px_rgba(14,165,233,0.18)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_8px_50px_rgba(14,165,233,0.3)]"
+>
+  Innovate with Omnivera
 
-                  <ArrowUpRight
-                    size={18}
-                    className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                  />
-                </Link>
+  <ArrowUpRight
+    size={16}
+    className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+  />
+</Link>
 
+<Link
+  to="/products"
+  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-5 py-3 text-sm text-gray-200 transition hover:bg-white/[0.05]"
+>
+  Explore Products
 
-                <Link
-                  to="/products"
-                  className="inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-7 py-4 text-gray-200 transition hover:bg-white/[0.05]"
-                >
-                  Explore Products
+  <ArrowRight size={15} />
+</Link>
 
-                  <ArrowRight size={16} />
-                </Link>
-
-              </div>
+</div>
 
 
               {/* =================================================

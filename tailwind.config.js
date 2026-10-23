@@ -56,8 +56,9 @@ export default {
         "line-strong": "rgba(233, 238, 250, 0.16)",
       },
       fontFamily: {
-        display: ["Unbounded", "Segoe UI", "sans-serif"],
-        body: ["Manrope", "Segoe UI", "sans-serif"],
+        sans: ["Inter", "Segoe UI", "sans-serif"],
+        display: ["Inter", "Segoe UI", "sans-serif"],
+        body: ["Inter", "Segoe UI", "sans-serif"],
       },
       borderRadius: {
         s: "6px",
