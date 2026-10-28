@@ -1,0 +1,135 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowUpRight, Bell, Boxes, CalendarDays, ChevronRight, ClipboardList, CreditCard, FileText, LogOut, Menu, Plus, Search, Users, Package, MessageCircle, RefreshCw, X, Send, CircleDollarSign, UserRound } from "lucide-react";
+import { api } from "../services/api";
+import Logo from "../components/Logo";
+
+const money = (n, currency = "INR") => new Intl.NumberFormat("en-IN", { style: "currency", currency, maximumFractionDigits: 2 }).format(Number(n || 0));
+const date = (value) => value ? new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "Not set";
+
+export default function StudioPage() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem("omnivera-studio-user") || "null"); } catch { return null; } });
+  const [section, setSection] = useState("Overview");
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [workspace, setWorkspace] = useState(null);
+  const [customers, setCustomers] = useState([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [query, setQuery] = useState("");
+  const [modal, setModal] = useState("");
+  const [form, setForm] = useState({});
+  const isAdmin = user?.role === "admin";
+
+  const loadMe = useCallback(async () => {
+    const res = await api.get("/workspace/me");
+    setUser(res.data.user);
+    localStorage.setItem("omnivera-studio-user", JSON.stringify(res.data.user));
+    setWorkspace(res.data.workspace);
+  }, []);
+  const loadCustomers = useCallback(async () => {
+    const res = await api.get("/workspace/customers");
+    setCustomers(res.data.customers || []);
+  }, []);
+  const loadCustomer = useCallback(async (id) => {
+    const res = await api.get(`/workspace/customers/${id}`);
+    setSelectedCustomer(res.data);
+    setSelectedId(id);
+  }, []);
+
+  useEffect(() => {
+    if (!localStorage.getItem("omnivera-auth-token")) { navigate("/login"); return; }
+    (async () => {
+      try {
+        await loadMe();
+        const saved = JSON.parse(localStorage.getItem("omnivera-studio-user") || "null");
+        if (saved?.role === "admin") await loadCustomers();
+      } catch (e) {
+        setError(e.response?.data?.message || "Could not load your workspace. Please sign in again.");
+        if (e.response?.status === 401) { localStorage.removeItem("omnivera-auth-token"); localStorage.removeItem("omnivera-studio-user"); navigate("/login"); }
+      } finally { setLoading(false); }
+    })();
+  }, [navigate, loadMe, loadCustomers]);
+
+  const refresh = async () => {
+    setError(""); setNotice("");
+    try {
+      if (isAdmin) { await loadCustomers(); if (selectedId) await loadCustomer(selectedId); }
+      else await loadMe();
+      setNotice("Latest data loaded.");
+    } catch (e) { setError(e.response?.data?.message || "Refresh failed."); }
+  };
+  const logout = () => { localStorage.removeItem("omnivera-auth-token"); localStorage.removeItem("omnivera-studio-user"); navigate("/login"); };
+  const nav = isAdmin ? ["Overview", "Customers & leads"] : ["Overview", "Projects", "Products", "Payments", "Messages"];
+  const filteredCustomers = useMemo(() => customers.filter(c => `${c.name} ${c.email} ${c.company}`.toLowerCase().includes(query.toLowerCase())), [customers, query]);
+  const submit = async (event) => {
+    event.preventDefault(); setBusy(true); setError(""); setNotice("");
+    try {
+      if (modal === "customer") {
+        const r = await api.post("/workspace/customers", form);
+        await loadCustomers(); setSelectedId(r.data.customer.id); await loadCustomer(r.data.customer.id);
+        setNotice(`Customer created. Temporary password: ${r.data.temporaryPassword}`);
+      } else if (modal === "profile") {
+        const r = await api.patch(`/workspace/customers/${selectedId}`, form);
+        setSelectedCustomer({ customer: r.data.customer, workspace: r.data.workspace }); await loadCustomers(); setNotice("Customer profile saved.");
+      } else if (["projects", "products", "payments"].includes(modal)) {
+        const r = await api.post(`/workspace/customers/${selectedId}/${modal}`, form);
+        setSelectedCustomer(prev => ({ ...prev, workspace: r.data.workspace })); await loadCustomers(); setNotice(`${modal.slice(0, -1)} added and visible in the customer's dashboard.`);
+      } else if (modal === "message") {
+        const r = await api.post(`/workspace/customers/${selectedId}/messages`, form);
+        setSelectedCustomer(prev => ({ ...prev, workspace: r.data.workspace })); setNotice("Message sent to the customer's workspace.");
+      } else if (modal === "client-message") {
+        const r = await api.post("/workspace/me/messages", form); setWorkspace(r.data.workspace); setNotice("Message sent to Omnivera.");
+      }
+      setModal(""); setForm({});
+    } catch (e) { setError(e.response?.data?.message || "Could not save changes."); }
+    finally { setBusy(false); }
+  };
+
+  if (loading) return <main className="studio-shell"><div className="studio-content">Loading your live workspace…</div></main>;
+  if (!user) return null;
+  const title = section === "Overview" ? `Good ${new Date().getHours() < 12 ? "morning" : "afternoon"}, ${isAdmin ? "Admin" : user.name}` : selectedCustomer ? selectedCustomer.customer?.name || "Customer profile" : section;
+
+  return <main className="studio-shell">
+    <aside className={`studio-sidebar ${mobileOpen ? "is-open" : ""}`}>
+      <Link to="/" className="studio-brand"><Logo size={30} /></Link>
+      <div className="studio-workspace"><span>WORKSPACE</span><strong>Omnivera Studio <ChevronRight size={14}/></strong></div>
+      <nav className="studio-nav">{nav.map(item => <button key={item} className={section === item ? "active" : ""} onClick={() => { setSection(item); setSelectedCustomer(null); setMobileOpen(false); }}>{navIcon(item)}{item}</button>)}</nav>
+      <div className="studio-sidebar-bottom"><Link to="/" className="studio-view-site">← Back to website</Link><button onClick={logout}><LogOut size={17}/> Sign out</button></div>
+    </aside>
+    {mobileOpen && <div className="studio-overlay" onClick={() => setMobileOpen(false)}/>}
+    <section className="studio-main">
+      <header className="studio-topbar"><button className="studio-menu" onClick={() => setMobileOpen(true)}><Menu/></button><div className="studio-search"><Search size={17}/><input placeholder={isAdmin ? "Search customers" : "Search workspace"} value={query} onChange={e => setQuery(e.target.value)}/></div><div className="studio-top-actions"><button aria-label="Refresh" onClick={refresh}><RefreshCw size={17}/></button><span className="studio-avatar">{(user.name || "U").slice(0,1).toUpperCase()}</span></div></header>
+      <div className="studio-content">
+        <div className="studio-title-row"><div><p className="studio-kicker">{isAdmin ? "ADMIN CONSOLE" : "CLIENT WORKSPACE"}</p><h1>{selectedCustomer && section === "Customers & leads" ? selectedCustomer.customer.name : title}</h1><p className="studio-muted">{isAdmin ? "Manage real customer records, projects, products, payments and messages." : "Your projects, purchases, payments and conversations with Omnivera."}</p></div>{isAdmin && section === "Customers & leads" && !selectedCustomer && <button className="studio-primary" onClick={() => { setForm({ name:"", email:"", company:"" }); setModal("customer"); }}><Plus size={18}/> Add customer</button>}{selectedCustomer && isAdmin && <button className="studio-primary" onClick={() => setModal("profile")}><UserRound size={17}/> Edit profile</button>}</div>
+        {error && <p className="studio-form-error" role="alert">{error}</p>}{notice && <p style={{color:"#68d7a7",fontSize:12,overflowWrap:"anywhere"}}>{notice}</p>}
+        {isAdmin && section === "Customers & leads" ? (selectedCustomer ? <CustomerProfile data={selectedCustomer} onAdd={kind => {setForm(defaultForm(kind));setModal(kind)}} onMessage={() => {setForm({message:""});setModal("message")}} onBack={() => setSelectedCustomer(null)} onUpdateRecord={async(kind,item) => { try { const r=await api.patch(`/workspace/customers/${selectedId}/${kind}/${item._id}`, item); setSelectedCustomer(prev=>({...prev,workspace:r.data.workspace})); setNotice("Record updated."); } catch(e){setError(e.response?.data?.message||"Update failed.")} }} /> : <CustomerList rows={filteredCustomers} onOpen={id => loadCustomer(id).catch(e=>setError(e.response?.data?.message||"Could not open customer."))} query={query} setQuery={setQuery} />) : isAdmin ? <AdminOverview customers={customers} onCustomers={() => setSection("Customers & leads")}/> : <ClientDashboard user={user} workspace={workspace} section={section} onMessage={() => {setForm({message:""});setModal("client-message")}}/>}
+      </div>
+    </section>
+    {modal && <Modal title={modalTitle(modal)} onClose={() => setModal("")}><form className="studio-form" onSubmit={submit}>{modal === "customer" && <><Field label="Full name" value={form.name||""} onChange={v=>setForm({...form,name:v})} required/><Field label="Email" type="email" value={form.email||""} onChange={v=>setForm({...form,email:v})} required/><Field label="Company" value={form.company||""} onChange={v=>setForm({...form,company:v})}/></>}{modal === "profile" && <><Field label="Name" value={form.name ?? selectedCustomer.customer.name} onChange={v=>setForm({...form,name:v})}/><Field label="Email" type="email" value={form.email ?? selectedCustomer.customer.email} onChange={v=>setForm({...form,email:v})}/><Field label="Company" value={form.company ?? selectedCustomer.workspace.company ?? ""} onChange={v=>setForm({...form,company:v})}/><Field label="Phone" value={form.phone ?? selectedCustomer.workspace.phone ?? ""} onChange={v=>setForm({...form,phone:v})}/><label>Customer status<select value={form.customerStatus ?? selectedCustomer.workspace.customerStatus ?? "Active"} onChange={e=>setForm({...form,customerStatus:e.target.value})}><option>Lead</option><option>Active</option><option>Paused</option><option>Former</option></select></label><label>Internal notes<textarea value={form.notes ?? selectedCustomer.workspace.notes ?? ""} onChange={e=>setForm({...form,notes:e.target.value})}/></label></>}{modal === "projects" && <><Field label="Project name" value={form.name||""} onChange={v=>setForm({...form,name:v})} required/><Field label="Description" value={form.description||""} onChange={v=>setForm({...form,description:v})}/><label>Status<select value={form.status||"Planning"} onChange={e=>setForm({...form,status:e.target.value})}>{["Planning","In progress","Review","Completed","On hold"].map(x=><option key={x}>{x}</option>)}</select></label><Field label="Progress (%)" type="number" value={form.progress??0} onChange={v=>setForm({...form,progress:Number(v)})}/><Field label="Due date" type="date" value={form.dueDate||""} onChange={v=>setForm({...form,dueDate:v})}/></>}{modal === "products" && <><Field label="Product / service name" value={form.name||""} onChange={v=>setForm({...form,name:v})} required/><Field label="Description" value={form.description||""} onChange={v=>setForm({...form,description:v})}/><Field label="Amount (₹)" type="number" value={form.amount??0} onChange={v=>setForm({...form,amount:Number(v)})}/><label>Status<select value={form.status||"Active"} onChange={e=>setForm({...form,status:e.target.value})}>{["Active","Pending","Cancelled"].map(x=><option key={x}>{x}</option>)}</select></label><Field label="Purchase date" type="date" value={form.purchaseDate||""} onChange={v=>setForm({...form,purchaseDate:v})}/></>}{modal === "payments" && <><Field label="Invoice / payment title" value={form.title||""} onChange={v=>setForm({...form,title:v})} required/><Field label="Amount (₹)" type="number" value={form.amount??""} onChange={v=>setForm({...form,amount:Number(v)})} required/><Field label="Invoice number" value={form.invoiceNumber||""} onChange={v=>setForm({...form,invoiceNumber:v})}/><label>Status<select value={form.status||"Pending"} onChange={e=>setForm({...form,status:e.target.value})}>{["Pending","Paid","Overdue","Refunded"].map(x=><option key={x}>{x}</option>)}</select></label><Field label="Due date" type="date" value={form.dueDate||""} onChange={v=>setForm({...form,dueDate:v})}/><Field label="Notes" value={form.notes||""} onChange={v=>setForm({...form,notes:v})}/></>}{(modal === "message" || modal === "client-message") && <label>Message<textarea required rows="5" maxLength="4000" value={form.message||""} onChange={e=>setForm({...form,message:e.target.value})} placeholder="Write your message…"/></label>}<button className="studio-submit" type="submit" disabled={busy}>{busy ? "Saving…" : modal === "message" || modal === "client-message" ? "Send message" : "Save changes"}</button></form></Modal>}
+  </main>;
+}
+function navIcon(item) { const icons={Overview:Boxes,"Customers & leads":Users,Projects:ClipboardList,Products:Package,Payments:CreditCard,Messages:MessageCircle}; const I=icons[item]||FileText; return <I size={18}/>; }
+function defaultForm(kind) { if(kind==="projects") return {name:"",description:"",status:"Planning",progress:0,dueDate:""}; if(kind==="products") return {name:"",description:"",amount:0,status:"Active",purchaseDate:""}; return {title:"",amount:"",status:"Pending",invoiceNumber:"",dueDate:"",notes:""}; }
+function modalTitle(m) { return ({customer:"Add customer",profile:"Edit customer profile",projects:"Add project update",products:"Add purchased product / service",payments:"Add payment / invoice",message:"Message customer", "client-message":"Message Omnivera"})[m] || "Update"; }
+function Field({label,value,onChange,type="text",required=false}) { return <label>{label}<input type={type} value={value} required={required} onChange={e=>onChange(e.target.value)}/></label>; }
+function Modal({title,children,onClose}) { return <div style={{position:"fixed",inset:0,zIndex:100,background:"rgba(0,0,0,.72)",display:"grid",placeItems:"center",padding:20}}><section className="studio-card" style={{width:"min(560px,100%)",maxHeight:"88vh",overflow:"auto",position:"relative"}}><button type="button" onClick={onClose} style={{float:"right",background:"transparent",color:"#fff",border:0}}><X/></button><h2>{title}</h2>{children}</section></div>; }
+function CustomerList({rows,onOpen,query,setQuery}) { return <section className="studio-card studio-leads"><div className="studio-card-head"><div><h2>Customers & leads</h2><p>Registered customers are loaded from MongoDB. Select one to manage their account.</p></div><span>{rows.length} records</span></div><div className="studio-table-wrap"><table><thead><tr>{["Customer","Company","Status","Projects","Products","Payments","Joined"].map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{rows.map(c=><tr key={c.id} onClick={()=>onOpen(c.id)} style={{cursor:"pointer"}}><td><strong>{c.name}</strong><br/><small>{c.email}</small></td><td>{c.company||"—"}</td><td><span className={`studio-status ${(c.customerStatus||"Active").toLowerCase()}`}>{c.customerStatus||"Active"}</span></td><td>{c.projectCount}</td><td>{c.productCount}</td><td>{c.paymentCount}</td><td>{date(c.createdAt)}</td></tr>)}{!rows.length&&<tr><td colSpan="7" style={{padding:24,textAlign:"center"}}>No customers found. New registrations will appear here automatically.</td></tr>}</tbody></table></div></section>; }
+function AdminOverview({customers,onCustomers}) { const active=customers.filter(c=>c.customerStatus==="Active").length; return <><div className="studio-stat-grid">{[[Users,"Registered customers",customers.length],[UserRound,"Active customers",active],[ClipboardList,"Tracked projects",customers.reduce((s,c)=>s+c.projectCount,0)],[Package,"Assigned products",customers.reduce((s,c)=>s+c.productCount,0)]].map(([I,l,v])=><article className="studio-stat" key={l}><span className="studio-stat-icon"><I size={19}/></span><p>{l}</p><strong>{v}</strong><small>Live database total</small></article>)}</div><section className="studio-card" style={{marginTop:16}}><div className="studio-card-head"><div><h2>Customer management</h2><p>Open a profile to track projects, purchased products, invoices, activity and messages.</p></div><button onClick={onCustomers}>View customers <ArrowUpRight size={15}/></button></div><div className="studio-project-list">{customers.slice(0,5).map(c=><button key={c.id} onClick={onCustomers} className="studio-project" style={{width:"100%",textAlign:"left",background:"transparent",border:0,cursor:"pointer",color:"inherit"}}><span className="studio-project-mark" style={{background:"#4bd2ff"}}>{(c.name||"C").slice(0,1)}</span><span className="studio-project-info"><strong>{c.name}</strong><span>{c.email} · {c.company||"No company"}</span></span><ChevronRight size={17}/></button>)}{!customers.length&&<p className="studio-muted">No customer records yet. Registered accounts will appear here.</p>}</div></section></>; }
+function CustomerProfile({data,onAdd,onMessage,onBack,onUpdateRecord}) { const {customer,workspace={}}=data; const [tab,setTab]=useState("Overview"); const tabs=["Overview","Projects","Products","Payments","Activity","Messages"]; const [reply,setReply]=useState({}); return <><button onClick={onBack} style={{background:"transparent",border:0,color:"#51d1ff",marginBottom:16,cursor:"pointer"}}>← All customers</button><div className="studio-stat-grid">{[[ClipboardList,"Projects",(workspace.projects||[]).length],[Package,"Products",(workspace.products||[]).length],[CreditCard,"Payment records",(workspace.payments||[]).length],[MessageCircle,"Messages",(workspace.messages||[]).length]].map(([I,l,v])=><article className="studio-stat" key={l}><span className="studio-stat-icon"><I size={18}/></span><p>{l}</p><strong>{v}</strong></article>)}</div><section className="studio-card" style={{marginTop:16}}><div className="studio-card-head"><div><h2>{customer.name}</h2><p>{customer.email} · {workspace.company||"No company"} · Joined {date(customer.createdAt)}</p><p>{workspace.phone||"No phone"} · Status: {workspace.customerStatus||"Active"}</p></div><button onClick={onMessage}><MessageCircle size={15}/> Message</button></div><div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:18}}>{tabs.map(t=><button key={t} onClick={()=>setTab(t)} style={{padding:"9px 12px",borderRadius:8,border:"1px solid #263650",background:tab===t?"#12334a":"transparent",color:tab===t?"#53d4ff":"#9eacc2",cursor:"pointer"}}>{t}</button>)}</div>
+{tab==="Overview"&&<div style={{paddingTop:18}}><p style={{color:"#9eacc2",whiteSpace:"pre-wrap"}}>{workspace.notes||"No internal notes."}</p><ActivityList items={workspace.activities||[]}/></div>}
+{tab==="Projects"&&<><SectionActions title="Project updates" onAdd={()=>onAdd("projects")}/><div className="studio-project-list">{(workspace.projects||[]).map(p=><article className="studio-project" key={p._id}><div className="studio-project-mark" style={{background:"#48c9f0"}}>P</div><div className="studio-project-info"><strong>{p.name}</strong><span>{p.description} · {p.status} · Due {date(p.dueDate)}</span><div className="studio-progress"><i style={{width:`${p.progress||0}%`,background:"#48c9f0"}}/></div><small>{p.progress||0}% complete</small></div><select aria-label="Update project status" value={p.status} onChange={e=>onUpdateRecord("projects",{...p,status:e.target.value})}>{["Planning","In progress","Review","Completed","On hold"].map(x=><option key={x}>{x}</option>)}</select></article>)}{!(workspace.projects||[]).length&&<Empty text="No projects assigned yet."/>}</div></>}
+{tab==="Products"&&<><SectionActions title="Purchased products & services" onAdd={()=>onAdd("products")}/>{(workspace.products||[]).map(p=><article className="studio-project" key={p._id}><div className="studio-project-mark" style={{background:"#5bcfa4"}}><Package size={17}/></div><div className="studio-project-info"><strong>{p.name}</strong><span>{p.description} · {p.status} · Purchased {date(p.purchaseDate)}</span></div><em>{money(p.amount,p.currency)}</em></article>)}{!(workspace.products||[]).length&&<Empty text="No products or services assigned. Add one when the customer purchases an Omnivera product."/>}</>}
+{tab==="Payments"&&<><SectionActions title="Invoices & payment tracking" onAdd={()=>onAdd("payments")}/>{(workspace.payments||[]).map(p=><article className="studio-project" key={p._id}><div className="studio-project-mark" style={{background:p.status==="Paid"?"#5bcfa4":"#f4bf69"}}><CircleDollarSign size={17}/></div><div className="studio-project-info"><strong>{p.title}</strong><span>{p.invoiceNumber||"No invoice number"} · Due {date(p.dueDate)} · {p.notes}</span><select value={p.status} onChange={e=>onUpdateRecord("payments",{...p,status:e.target.value})}>{["Pending","Paid","Overdue","Refunded"].map(x=><option key={x}>{x}</option>)}</select></div><em>{money(p.amount,p.currency)}</em></article>)}{!(workspace.payments||[]).length&&<Empty text="No payment records yet."/>}</>}
+{tab==="Activity"&&<ActivityList items={workspace.activities||[]}/>}
+{tab==="Messages"&&<><SectionActions title="Customer conversation" onAdd={onMessage}/><MessageList messages={workspace.messages||[]}/></>}
+</section></>; }
+function SectionActions({title,onAdd}) { return <div className="studio-card-head" style={{marginTop:24}}><div><h2>{title}</h2></div><button onClick={onAdd}><Plus size={15}/> Add</button></div>; }
+function ActivityList({items}) { return <div className="studio-activity-list">{items.map(a=><article key={a._id}><span className="studio-activity-bullet"/><div><strong>{a.title}</strong><p>{a.detail} · {date(a.createdAt)}</p></div><em>{a.type}</em></article>)}{!items.length&&<Empty text="Activity will appear here when records are changed."/>}</div>; }
+function MessageList({messages}) { return <div className="studio-activity-list">{messages.map(m=><article key={m._id}><span className="studio-activity-bullet"/><div><strong>{m.senderName} · {m.senderRole}</strong><p style={{whiteSpace:"pre-wrap"}}>{m.message}</p><small>{date(m.createdAt)}</small></div></article>)}{!messages.length&&<Empty text="No messages yet. Start the conversation."/>}</div>; }
+function Empty({text}) { return <p style={{padding:"22px 0",color:"#8190a8",fontSize:13}}>{text}</p>; }
+function ClientDashboard({user,workspace,section,onMessage}) { const projects=workspace?.projects||[],products=workspace?.products||[],payments=workspace?.payments||[],activities=workspace?.activities||[],messages=workspace?.messages||[]; const active=projects.filter(p=>p.status!=="Completed").length; const pending=payments.filter(p=>["Pending","Overdue"].includes(p.status)).reduce((s,p)=>s+p.amount,0); const view=section==="Projects"?projects:section==="Products"?products:section==="Payments"?payments:section==="Messages"?messages:null; return <><div className="studio-stat-grid">{[[ClipboardList,"Ongoing projects",active],[Package,"Products & services",products.length],[CreditCard,"Pending payments",money(pending)],[MessageCircle,"Messages",messages.length]].map(([I,l,v])=><article className="studio-stat" key={l}><span className="studio-stat-icon"><I size={18}/></span><p>{l}</p><strong style={{fontSize:typeof v==="string"&&v.length>8?18:25}}>{v}</strong><small>Live from your account</small></article>)}</div>{!view||section==="Overview"?<><section className="studio-card" style={{marginTop:16}}><div className="studio-card-head"><div><h2>Your projects</h2><p>Progress and updates published by your Omnivera team.</p></div></div>{projects.map(p=><article className="studio-project" key={p._id}><div className="studio-project-mark" style={{background:"#48c9f0"}}>P</div><div className="studio-project-info"><strong>{p.name}</strong><span>{p.description} · {p.status}</span><div className="studio-progress"><i style={{width:`${p.progress||0}%`,background:"#48c9f0"}}/></div></div><em>{p.progress||0}%</em></article>)}{!projects.length&&<Empty text="No ongoing projects yet. Once Omnivera assigns a project, it will appear here."/>}</section><section className="studio-grid-two"><section className="studio-card"><div className="studio-card-head"><div><h2>Purchased products</h2><p>Products and services attached to your account.</p></div></div>{products.map(p=><article className="studio-project" key={p._id}><div className="studio-project-mark" style={{background:"#5bcfa4"}}><Package size={17}/></div><div className="studio-project-info"><strong>{p.name}</strong><span>{p.status} · {date(p.purchaseDate)}</span></div><em>{money(p.amount,p.currency)}</em></article>)}{!products.length&&<Empty text="No Omnivera purchases have been added to your account yet."/>}</section><section className="studio-card"><div className="studio-card-head"><div><h2>Recent activity</h2><p>Account updates and payments.</p></div></div><ActivityList items={activities.slice(0,6)}/></section></section></>:<section className="studio-card" style={{marginTop:16}}><div className="studio-card-head"><div><h2>{section}</h2><p>Live account records maintained by Omnivera.</p></div>{section==="Messages"&&<button onClick={onMessage}><Send size={15}/> New message</button>}</div>{section==="Projects"&&projects.map(p=><article className="studio-project" key={p._id}><div className="studio-project-info"><strong>{p.name}</strong><span>{p.description} · {p.status} · Due {date(p.dueDate)}</span><div className="studio-progress"><i style={{width:`${p.progress||0}%`,background:"#48c9f0"}}/></div></div><em>{p.progress||0}%</em></article>)}{section==="Products"&&products.map(p=><article className="studio-project" key={p._id}><div className="studio-project-info"><strong>{p.name}</strong><span>{p.description} · {p.status} · {date(p.purchaseDate)}</span></div><em>{money(p.amount,p.currency)}</em></article>)}{section==="Payments"&&payments.map(p=><article className="studio-project" key={p._id}><div className="studio-project-info"><strong>{p.title}</strong><span>{p.invoiceNumber} · Due {date(p.dueDate)} · {p.status}</span></div><em>{money(p.amount,p.currency)}</em></article>)}{section==="Messages"&&<><MessageList messages={messages}/><button className="studio-primary" style={{padding:"0 15px",marginTop:12}} onClick={onMessage}>Send a message</button></>}{view?.length===0&&<Empty text={`No ${section.toLowerCase()} to show yet.`}/>}</section>}</>; }

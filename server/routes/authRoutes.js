@@ -1,0 +1,9 @@
+import { Router } from "express";
+import { login, me, register } from "../controllers/authController.js";
+import { requireAuth } from "../middleware/requireAuth.js";
+const router = Router();
+// Basic per-IP throttling is strongly recommended at the reverse proxy in production.
+router.post("/register", register);
+router.post("/login", login);
+router.get("/me", requireAuth, me);
+export default router;
