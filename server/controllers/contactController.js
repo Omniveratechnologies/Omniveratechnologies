@@ -41,3 +41,23 @@ export async function createContact(req, res) {
     });
   }
 }
+
+export async function listContactLeads(req, res, next) {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Admin access required.",
+    });
+  }
+
+  try {
+    const leads = await Contact.find()
+      .select("name company email message createdAt")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json({ success: true, leads });
+  } catch (error) {
+    return next(error);
+  }
+}

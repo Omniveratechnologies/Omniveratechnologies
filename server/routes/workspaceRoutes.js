@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/requireAuth.js";
+import { listContactLeads } from "../controllers/contactController.js";
 import {
   myWorkspace, sendMessage, listCustomers, createCustomer, customerDetail,
   updateCustomer, addRecord, updateRecord, adminReply
@@ -9,6 +10,7 @@ const router = Router();
 router.use(requireAuth);
 router.get("/me", myWorkspace);
 router.post("/me/messages", sendMessage);
+router.get("/leads", listContactLeads);
 router.get("/customers", listCustomers);
 router.post("/customers", createCustomer);
 router.get("/customers/:id", customerDetail);

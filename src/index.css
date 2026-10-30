@@ -1383,6 +1383,26 @@
    Keep this outside the scrolling page content (see Layout.jsx).
 ========================================================= */
 @media (max-width: 600px) {
+  html,
+  body {
+    min-height: 100%;
+    background: #04070e;
+  }
+
+  body {
+    padding-bottom: 0 !important;
+  }
+
+  #root {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .mobile-header {
+    height: calc(64px + env(safe-area-inset-top, 0px)) !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
+  }
+
   .mobile-bottom-nav {
     position: fixed !important;
     inset-inline: 0 !important;
@@ -1391,19 +1411,45 @@
     z-index: 9999 !important;
     display: grid !important;
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    width: 100% !important;
-    height: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
-    min-height: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+    width: 100vw !important;
+    right: auto !important;
+    height: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+    min-height: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
     margin: 0 !important;
-    padding: 6px 7px calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom, 0px)) !important;
     box-sizing: border-box !important;
     transform: none !important;
     border-top: 1px solid rgba(160, 183, 225, 0.16) !important;
     background: rgba(4, 7, 14, 0.98) !important;
     isolation: isolate;
+    box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
   }
 
   .mobile-page-shell {
+    padding-top: calc(64px + env(safe-area-inset-top, 0px)) !important;
     padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .mobile-bottom-nav-item {
+    min-height: 54px;
+    gap: 2px;
+    font-size: 10px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-bottom-nav-item:focus-visible {
+    outline: 2px solid #5edfff;
+    outline-offset: -3px;
+  }
+
+  .mobile-bottom-nav-item.is-active {
+    color: #75e4ff;
+    background: linear-gradient(180deg, rgba(39, 200, 255, 0.12), rgba(39, 200, 255, 0.035));
+  }
+
+  .mobile-bottom-nav-item.is-active .mobile-bottom-nav-icon {
+    filter: drop-shadow(0 0 7px rgba(60, 207, 255, 0.48));
   }
 }

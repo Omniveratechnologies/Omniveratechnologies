@@ -7,7 +7,7 @@ import MobileBottomNav from "./MobileBottomNav";
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
-  const isStudio = ["/login", "/studio"].includes(location.pathname);
+  const isStudio = location.pathname === "/login" || location.pathname.startsWith("/studio");
 
   useEffect(() => {
     setMobileOpen(false);
