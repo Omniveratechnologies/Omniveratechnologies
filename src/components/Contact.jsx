@@ -16,9 +16,6 @@ export default function Contact() {
     e.preventDefault();
     setStatus("sending");
     try {
-      // Wired to the MERN backend via src/services/api.js. Point
-      // VITE_API_URL at your Express server and implement a matching
-      // POST /api/contact route to start receiving these submissions.
       await submitContactForm(form);
       setStatus("success");
       setForm(initialForm);

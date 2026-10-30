@@ -1,4 +1,3 @@
-import logo from "../public/Images/logo.png";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
@@ -42,7 +41,7 @@ export default function Layout() {
   aria-label="Mobile header"
 >
   <img
-    src={logo}
+    src="/Images/logo.png"
     alt="Omnivera"
     className="mobile-header-logo"
   />

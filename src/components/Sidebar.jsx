@@ -1,4 +1,3 @@
-import logo from "../public/Images/logo.png";
 import { NavLink } from "react-router-dom";
 import NavIcon from "./NavIcon";
 import { nav } from "../data/content";
@@ -30,7 +29,7 @@ export default function Sidebar({ open, onClose }) {
             className="flex items-center justify-center w-full"
           >
             <img
-  src={logo}
+  src="/Images/logo.png"
   alt="Omnivera"
   className="sidebar-logo"
 />

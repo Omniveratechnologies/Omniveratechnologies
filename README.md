@@ -1,252 +1,114 @@
-# Omnivera — Company Website (Dashboard Layout)
+# Omnivera
 
-A complete, editable React website for **Omnivera** (Omniware Technologies
-Private Limited), built as a dashboard-style app: a static sidebar for
-navigation, a page area that swaps per route, and one shared footer at the
-bottom of every page. Content is placeholder/dummy — everything is designed
-to be swapped for real copy, images, and video.
+Omnivera is a React website and customer workspace backed by an Express API
+and MongoDB.
 
-## Tech stack
+## Project structure
 
-- **React 18** + **Vite**
-- **React Router v6** for client-side page routing
-- **Tailwind CSS** with a brand-matched design-token theme
-  (`tailwind.config.js` + `src/index.css`)
-- **Axios** service layer (`src/services/api.js`) ready to talk to a
-  Node/Express + MongoDB (MERN) backend — this repo is the **frontend
-  only**; no server is included
+```text
+public/Images/       Static assets served from the site root
+src/
+  components/        Shared UI components
+  data/              Website content
+  pages/             Route-level pages
+  services/          Frontend API client
+  App.jsx            Client-side routes
+server/
+  config/            Database connection and initial admin setup
+  controllers/       API request handlers
+  middleware/        Authentication and error handling
+  models/            Mongoose models
+  routes/             API route definitions
+  server.js           Express entry point
+```
 
-## Getting started
+## Requirements
+
+- Node.js 20 or newer
+- npm
+- A MongoDB Atlas database for the API
+
+## Local development
+
+Install dependencies in both applications:
 
 ```bash
-npm install
-cp .env.example .env   # point VITE_API_URL at your Express API
+npm ci
+npm --prefix server ci
+```
+
+Create local environment files from the examples:
+
+```bash
+cp .env.example .env
+cp server/.env.example server/.env
+```
+
+In `server/.env`, set `MONGODB_URI` to your Atlas connection string and
+replace its password placeholder. URL-encode special characters in the
+password. Set `JWT_SECRET` to a random secret of at least 32 characters.
+Set a strong `ADMIN_PASSWORD` if the initial admin account should be created.
+Keep both `.env` files private; they are ignored by Git.
+
+Start the API and frontend in separate terminals:
+
+```bash
+npm run server
 npm run dev
 ```
 
-Open the local URL Vite prints (usually `http://localhost:5173`).
-
-Production build:
+The frontend is available at `http://localhost:5173`; the API health check is
+at `http://localhost:5001/api/health`. Vite proxies `/api` requests to the
+local API. You can also start the production frontend build with:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-Output goes to `dist/` and can be hosted on any static host.
-
-## Connecting the backend (MERN)
-
-This project only ships the **M** (data shape expectations below) + **RN**
-of MERN — the Express/MongoDB API is up to you. Two things wire the
-frontend to your backend once it exists:
-
-1. **`.env`** — set `VITE_API_URL` to your API's base URL, e.g.
-   `http://localhost:5000/api` in development.
-2. **`src/services/api.js`** — a shared Axios instance plus one example
-   call, `submitContactForm()`, used by `src/components/Contact.jsx`.
-   Add more functions here as you add endpoints (e.g. `getProducts()`,
-   `getServices()`) and swap the static files in `src/data/` for API
-   calls as your backend comes online.
-
-Suggested Express route for the contact form already wired up:
-
-```
-POST /api/contact
-Body: { name, company, email, message }
-```
-
-Until that route exists, the form will show a friendly "couldn't reach the
-server" message instead of failing silently.
-
-## Layout
-
-- **Sidebar** (`src/components/Sidebar.jsx`) is fixed to the left on
-  desktop and always visible. On narrower screens it becomes an off-canvas
-  drawer, opened with the hamburger button in the top bar
-  (`src/components/Layout.jsx`).
-- **Pages** render inside `.content-scroll`, to the right of the sidebar.
-- **Footer** (`src/components/Footer.jsx`) is rendered once, inside
-  `Layout.jsx`, directly under every page's content — so it's identical and
-  shared across the whole site, not duplicated per page.
-
-## Pages / routes
-
-| Sidebar label     | Route               | File                                  |
-|-------------------|----------------------|----------------------------------------|
-| Home              | `/`                  | `src/pages/Home.jsx`                   |
-| Product           | `/products`          | `src/pages/ProductsPage.jsx`           |
-| Services          | `/services`          | `src/pages/ServicesPage.jsx`           |
-| About Us          | `/about-us`          | `src/pages/AboutUsPage.jsx`            |
-| Contact Us        | `/contact-us`        | `src/pages/ContactUsPage.jsx`          |
-| Why Choose Us     | `/why-choose-us`     | `src/pages/WhyChooseUsPage.jsx`        |
-| Company Profile   | `/company-profile`   | `src/pages/CompanyProfilePage.jsx`     |
-
-Routes are declared in `src/App.jsx`. Add a new page by creating a
-component in `src/pages/`, adding a `<Route>` in `App.jsx`, and adding an
-entry to the `nav` array in `src/data/content.js` (this also drives the
-sidebar automatically).
-
-## Project structure
-
-```
-src/
-  components/
-    Layout.jsx        — sidebar + top bar (mobile) + page outlet + footer
-    Sidebar.jsx         — static sidebar nav, drawer on mobile
-    NavIcon.jsx          — small inline icon set used only in the sidebar
-    Hero.jsx, Positioning.jsx, Products.jsx, ProductModal.jsx,
-    Services.jsx, Contact.jsx, Footer.jsx, Logo.jsx
-  pages/
-    Home.jsx             — hero + positioning teaser + quick-link tiles
-    ProductsPage.jsx       — product showcase + detail overlay (owns modal state)
-    ServicesPage.jsx
-    AboutUsPage.jsx
-    ContactUsPage.jsx
-    WhyChooseUsPage.jsx
-    CompanyProfilePage.jsx
-  data/
-    content.js          — company info, sidebar nav, hero + contact copy
-    aboutUs.js            — About Us page content
-    whyChooseUs.js         — Why Choose Us page content
-    companyProfile.js       — Company Profile page content
-    products.js             — the two flagship product entries
-    services.js              — the services grid entries
-  services/
-    api.js                 — Axios client + submitContactForm() (MERN backend hook)
-  App.jsx                — route definitions
-  main.jsx                 — BrowserRouter + app mount
-  index.css                 — Tailwind directives + small set of component/utility layers
-tailwind.config.js        — brand color tokens (chrome + steel-blue, matched to the logo), fonts, shadows
-.env.example               — VITE_API_URL for the backend
-```
-
-## What to edit first
-
-1. **`src/data/content.js`** — company name, tagline, email, phone,
-   address, social links, sidebar labels/routes, hero copy.
-2. **`src/data/products.js`** — replace the two dummy products
-   (`Coming Soon`, `Coming Soon`) with your real products.
-3. **`src/data/aboutUs.js`**, **`whyChooseUs.js`**, **`companyProfile.js`**
-   — swap in real mission/vision, differentiators, and company facts.
-4. **`src/components/Logo.jsx`** — once you have a final logo file, replace
-   the inline SVG with `<img src="/your-logo.svg" alt="Omnivera" />`.
-5. **Product media** — in `ProductModal.jsx`, the `.modal-image` and
-   `.modal-video` blocks are placeholders for a real screenshot and video.
-
-## Notes on the product overlay
-
-- On the Products page, clicking a product card opens a full-screen
-  overlay; the products section behind it blurs and the whole viewport
-  darkens (the overlay itself is a fixed, semi-transparent layer).
-- The page's scroll position is captured before the overlay opens and
-  restored when it closes.
-- The overlay closes via its close button, the Escape key, or a click
-  outside the panel.
-
 ## Deployment
 
-This is a static Vite + React Router app. Most static hosts (Vercel,
-Netlify, etc.) handle client-side routing automatically; if you deploy to a
-plain static file server, configure it to fall back to `index.html` for
-unknown paths (a SPA rewrite rule) so routes like `/products` work on a
-direct load/refresh.
+Deploy the frontend and API as separate services, or configure your host to
+route `/api` to the API service.
 
+### Frontend
 
-## MERN backend setup
+- Build command: `npm ci && npm run build`
+- Output directory: `dist`
+- Set `VITE_API_URL` in the frontend build environment:
+  - Use `/api` when the frontend host proxies `/api` to the backend.
+  - Otherwise use the backend's full URL ending in `/api`, for example
+    `https://api.example.com/api`.
+- Configure SPA fallback/rewrite behavior so direct loads of routes such as
+  `/products` and `/studio` serve `index.html`.
 
-The project now includes an Express + MongoDB backend in `server/`.
+Vite embeds `VITE_API_URL` at build time, so rebuild the frontend after
+changing it.
 
-### Backend structure
+### API
 
-```text
-server/
-  config/db.js
-  controllers/contactController.js
-  middleware/errorHandler.js
-  models/Contact.js
-  routes/contactRoutes.js
-  routes/index.js
-  .env
-  .env.example
-  package.json
-  server.js
-```
+Deploy the `server/` directory as a Node.js service:
 
-### 1. Configure MongoDB
+- Install command: `npm ci`
+- Start command: `npm start`
+- Provide `PORT`, `NODE_ENV=production`, `MONGODB_URI`, `JWT_SECRET`, and
+  `CLIENT_URL` as service environment variables. `CLIENT_URL` must be the
+  frontend's exact origin (scheme and hostname, without a path).
+- Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` for first-time admin creation.
+  The seeder does not change an existing admin account.
+- Allow the API service to connect to MongoDB Atlas in the Atlas network
+  access settings.
 
-Open `server/.env` and replace `<db_password>` in `MONGODB_URI` with the password for the MongoDB Atlas user `anshshaw08_db_user`.
+Never commit database credentials, admin passwords, or JWT secrets. If a
+credential has been shared or exposed, rotate it in MongoDB Atlas and update
+the API service environment before deployment.
 
-Do not commit `server/.env` to Git. It is already included in `.gitignore`.
+## API routes
 
-### 2. Install dependencies
+- `GET /api/health` — service health
+- `POST /api/contact` — submit a contact request
+- `/api/auth` — register, sign in, and retrieve the current user
+- `/api/workspace` — authenticated customer and admin workspace operations
 
-From the project root:
-
-```bash
-npm install
-cd server
-npm install
-cd ..
-```
-
-### 3. Start the backend
-
-```bash
-npm run server
-```
-
-The API runs on:
-
-```text
-http://localhost:5001
-```
-
-Health check:
-
-```text
-http://localhost:5001/api/health
-```
-
-### 4. Start the frontend
-
-In another terminal:
-
-```bash
-npm run dev
-```
-
-The frontend is configured in `.env` to use:
-
-```text
-http://localhost:5001/api
-```
-
-### 5. Run frontend + backend together
-
-After installing the root dependencies:
-
-```bash
-npm run dev:all
-```
-
-### Contact API
-
-The existing Contact form is now connected to MongoDB through:
-
-```text
-POST http://localhost:5001/api/contact
-```
-
-Request body:
-
-```json
-{
-  "name": "John Doe",
-  "company": "Example Pvt Ltd",
-  "email": "john@example.com",
-  "message": "I want to discuss a project."
-}
-```
-
-Submissions are stored in the MongoDB `contacts` collection.
+The contact form submits `{ name, company, email, message }` to
+`POST /api/contact`.
