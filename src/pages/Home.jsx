@@ -144,7 +144,7 @@ export default function Home() {
 
               <div className="mobile-development-gear">
                 <div className="mobile-company-name">
-                  Omnivera Technologies Pvt Limited
+                  Omnivera Technologies Private Limited
                 </div>
                 <DevelopmentGear />
               </div>
